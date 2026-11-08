@@ -123,4 +123,9 @@ const captchaOptions = computed(() => {
   
   return options
 })
+watch([() => form.value?.use_captcha, captchaOptions], ([enabled, options]) => {
+  if (enabled && options.length && !options.some(option => option.value === form.value.captcha_provider)) {
+    form.value.captcha_provider = options[0].value
+  }
+}, { immediate: true })
 </script>

@@ -258,6 +258,6 @@ docker compose up -d
 
 Turnstile verifies completed public submissions, including edits to existing submissions. Field-validation requests do not consume tokens. As with the existing CAPTCHA providers, enabled partial submissions save without a CAPTCHA; disable partial submissions if every saved response must be verified. Account registration continues to use its existing provider.
 
-Tokens expire after five minutes and are single-use. The widget refreshes expired tokens and resets after submission errors. If verification cannot complete, the form rejects the submission.
+Tokens expire after five minutes and are single-use. The widget refreshes expired tokens and resets after public submission errors. The existing admin submission-edit modal does not reset CAPTCHA tokens after errors; reopen that modal before retrying. If verification cannot complete, the form rejects the submission.
 
-Use Cloudflare's [test keys](https://developers.cloudflare.com/turnstile/troubleshooting/testing/) for local testing. See [server-side verification](https://developers.cloudflare.com/turnstile/get-started/server-side-validation/) for token behavior.
+Cloudflare's [test keys](https://developers.cloudflare.com/turnstile/troubleshooting/testing/) can exercise the widget, but their verification responses omit the action. This integration requires the `form_submit` action, so a successful end-to-end submission needs a dedicated non-production widget and keys with the test hostname allowed. Automated API tests mock verified responses with that action. See [server-side verification](https://developers.cloudflare.com/turnstile/get-started/server-side-validation/) for token behavior.

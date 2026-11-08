@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Rules;
 
 use Closure;
+use GuzzleHttp\Exception\TransferException;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 
@@ -27,7 +28,7 @@ final class ValidTurnstile
                 'secret' => $secret,
                 'response' => $value,
             ]);
-        } catch (ConnectionException) {
+        } catch (ConnectionException|TransferException) {
             $fail(__('validation.invalid_captcha'));
 
             return;

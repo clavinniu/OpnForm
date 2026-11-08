@@ -41,12 +41,15 @@ it('rejects unsuccessful verification responses', function (array $response, int
     'server failure' => [['success' => true, 'action' => 'form_submit'], 503],
 ]);
 
-it('rejects verification timeouts', function () {
-    Http::fake(fn () => throw new ConnectionException('Timed out'));
+it('rejects verification transport failures', function (Throwable $error) {
+    Http::fake(fn () => throw $error);
     $this->postJson(route('forms.answer', $this->turnstileForm->slug), ['cf-turnstile-response' => 'test-token'])
         ->assertUnprocessable()->assertJsonValidationErrors('cf-turnstile-response');
     expect($this->turnstileForm->submissions()->count())->toBe(0);
-});
+})->with([
+    'timeout' => [new ConnectionException('Timed out')],
+    'TLS failure' => [new \GuzzleHttp\Exception\TransferException('Certificate failure')],
+]);
 
 it('fails closed when the secret is missing', function () {
     config(['services.turnstile.secret_key' => null]);
