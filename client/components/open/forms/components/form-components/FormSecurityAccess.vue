@@ -103,7 +103,7 @@ const { content: form } = storeToRefs(workingFormStore)
 const config = useRuntimeConfig()
 
 const hasCaptcha = computed(() => {
-  return config.public.hCaptchaSiteKey || config.public.reCaptchaSiteKey
+  return config.public.hCaptchaSiteKey || config.public.reCaptchaSiteKey || useFeatureFlag('services.turnstile.site_key')
 })
 
 const captchaOptions = computed(() => {
@@ -115,6 +115,10 @@ const captchaOptions = computed(() => {
   
   if (config.public.hCaptchaSiteKey) {
     options.push({ name: 'hCaptcha', value: 'hcaptcha' })
+  }
+
+  if (useFeatureFlag('services.turnstile.site_key')) {
+    options.push({ name: 'Cloudflare Turnstile', value: 'turnstile' })
   }
   
   return options

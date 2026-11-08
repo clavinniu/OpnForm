@@ -10,6 +10,7 @@ use App\Rules\StorageFile;
 use App\Rules\ValidHCaptcha;
 use App\Rules\ValidPhoneInputRule;
 use App\Rules\ValidReCaptcha;
+use App\Rules\ValidTurnstile;
 use App\Rules\ValidUrl;
 use App\Service\Forms\FormLogicPropertyResolver;
 use App\Service\Forms\SubmissionAttribution;
@@ -138,6 +139,8 @@ class AnswerFormRequest extends FormRequest
                 $this->requestRules['g-recaptcha-response'] = [new ValidReCaptcha()];
             } elseif ($this->form->captcha_provider === 'hcaptcha') {
                 $this->requestRules['h-captcha-response'] = [new ValidHCaptcha()];
+            } elseif ($this->form->captcha_provider === 'turnstile' && !$this->isPrecognitive()) {
+                $this->requestRules['cf-turnstile-response'] = ['bail', 'required', 'string', 'max:2048', (new ValidTurnstile())->validate(...)];
             }
         }
 
@@ -177,6 +180,7 @@ class AnswerFormRequest extends FormRequest
     public function messages()
     {
         $messages = [];
+        $messages['cf-turnstile-response.required'] = __('validation.complete_captcha');
         foreach ($this->form->properties as $property) {
             if ($property['type'] == 'date' && isset($property['date_range']) && $property['date_range']) {
                 $messages[$property['id'] . '.0.required_with'] = __('validation.from_date_required');

@@ -14,7 +14,7 @@
         @closed="onCaptchaClose"
       />
       <HCaptchaV2
-        v-else
+        v-else-if="provider === 'hcaptcha'"
         :key="`hcaptcha-${componentKey}`"
         ref="captchaRef"
         :sitekey="hCaptchaSiteKey"
@@ -24,6 +24,16 @@
         @expired="onCaptchaExpired"
         @opened="onCaptchaOpen"
         @closed="onCaptchaClose"
+      />
+      <Turnstile
+        v-else-if="provider === 'turnstile'"
+        :key="`turnstile-${componentKey}`"
+        ref="captchaRef"
+        :sitekey="turnstileSiteKey"
+        :theme="darkMode ? 'dark' : 'light'"
+        :language="language"
+        @verify="onCaptchaVerify"
+        @expired="onCaptchaExpired"
       />
     </div>
     <has-error
@@ -36,12 +46,13 @@
 <script setup>
 import HCaptchaV2 from './HCaptchaV2.vue'
 import RecaptchaV2 from './RecaptchaV2.vue'
+import Turnstile from './Turnstile.vue'
 
 const props = defineProps({
   provider: {
     type: String,
     required: true,
-    validator: (value) => ['recaptcha', 'hcaptcha'].includes(value)
+    validator: (value) => ['recaptcha', 'hcaptcha', 'turnstile'].includes(value)
   },
   form: {
     type: Object,
@@ -60,19 +71,24 @@ const props = defineProps({
 const config = useRuntimeConfig()
 const reCaptchaSiteKey = config.public.reCaptchaSiteKey
 const hCaptchaSiteKey = config.public.hCaptchaSiteKey
+const turnstileSiteKey = computed(() => useFeatureFlag('services.turnstile.site_key'))
 
 const captchaRef = ref(null)
 const isIframe = ref(false)
 const showCaptcha = ref(true)
 const componentKey = ref(0)
 
-const formFieldName = computed(() => props.provider === 'recaptcha' ? 'g-recaptcha-response' : 'h-captcha-response')
+const formFieldName = computed(() => props.provider === 'turnstile'
+  ? 'cf-turnstile-response'
+  : props.provider === 'recaptcha' ? 'g-recaptcha-response' : 'h-captcha-response')
 
 const isSiteKeyAvailable = computed(() => {
   if (props.provider === 'recaptcha') {
     return !!reCaptchaSiteKey
   } else if (props.provider === 'hcaptcha') {
     return !!hCaptchaSiteKey
+  } else if (props.provider === 'turnstile') {
+    return !!turnstileSiteKey.value
   }
   return false
 })
@@ -85,6 +101,8 @@ watch(() => props.provider, async (newProvider, oldProvider) => {
       props.form['g-recaptcha-response'] = null
     } else if (oldProvider === 'hcaptcha') {
       props.form['h-captcha-response'] = null
+    } else if (oldProvider === 'turnstile') {
+      props.form['cf-turnstile-response'] = null
     }
 
     // Force remount by toggling visibility and incrementing key
@@ -166,7 +184,7 @@ defineExpose({
   reset: () => {
     // Only do a full reset if the captcha was previously completed
     if (captchaRef.value) {
-      if (wasCaptchaCompleted.value) {
+      if (wasCaptchaCompleted.value || props.provider === 'turnstile') {
         wasCaptchaCompleted.value = false
         captchaRef.value.reset()
       }
@@ -185,4 +203,4 @@ defineExpose({
 .fade-leave-to {
   opacity: 0;
 }
-</style> 
+</style>
