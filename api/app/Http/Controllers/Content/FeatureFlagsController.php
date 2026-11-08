@@ -28,6 +28,11 @@ class FeatureFlagsController extends Controller
                     's3' => config('filesystems.default') !== 'local',
                 ],
                 'services' => [
+                    'turnstile' => [
+                        'site_key' => config('services.turnstile.secret_key')
+                            ? config('services.turnstile.site_key')
+                            : null,
+                    ],
                     'unsplash' => !empty(config('services.unsplash.access_key')),
                     'google' => [
                         'fonts' => !empty(config('services.google.fonts_api_key')),

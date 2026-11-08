@@ -49,12 +49,15 @@ const isCaptchaRequired = computed(() => {
     return !!runtimeConfig.reCaptchaSiteKey
   } else if (captchaProvider === 'hcaptcha') {
     return !!runtimeConfig.hCaptchaSiteKey
+  } else if (captchaProvider === 'turnstile') {
+    return !!useFeatureFlag('services.turnstile.site_key')
   }
   return false
 })
 
 // Get field name based on provider
 const captchaFieldName = computed(() => {
+  if (provider.value === 'turnstile') return 'cf-turnstile-response'
   return provider.value === 'recaptcha' 
     ? 'g-recaptcha-response' 
     : 'h-captcha-response'
@@ -80,4 +83,4 @@ watch(() => props.formManager.state.isProcessing, (isProcessing, wasProcessing) 
     captchaInputRef.value.reset()
   }
 })
-</script> 
+</script>

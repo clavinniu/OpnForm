@@ -64,6 +64,8 @@ There are dedicated configuration pages available for more detailed setup instru
 | `H_CAPTCHA_SECRET_KEY`           | Secret key for hCaptcha integration.                                                                                                                                                      |
 | `RE_CAPTCHA_SITE_KEY`            | Site key for reCAPTCHA integration.                                                                                                                                                       |
 | `RE_CAPTCHA_SECRET_KEY`          | Secret key for reCAPTCHA integration.                                                                                                                                                     |
+| `TURNSTILE_SITE_KEY` | Public Cloudflare Turnstile site key. Delivered to the client through the feature-flags endpoint when the secret is configured. |
+| `TURNSTILE_SECRET_KEY` | Server-only Cloudflare Turnstile secret used to verify public form submissions. |
 | `OPEN_AI_API_KEY`                | API key for accessing OpenAI services.                                                                                                                                                    |
 | `UNSPLASH_ACCESS_KEY`            | Access key for Unsplash API.                                                                                                                                                              |
 | `UNSPLASH_SECRET_KEY`            | Secret key for Unsplash API.                                                                                                                                                              |
@@ -245,3 +247,17 @@ docker compose up -d
     your `.env` files. You must use `down` and `up` commands to recreate the
     containers.
 </Warning>
+
+
+## Turnstile for public forms
+
+1. Create a managed Turnstile widget in Cloudflare and allow the hostnames that serve your forms, including custom form domains. Keep hostname restrictions enabled. For embedded forms, use the form iframe's hostname.
+2. Set `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` in `api/.env`. No additional Nuxt environment variable is required. Never place the secret in client configuration.
+3. Refresh Laravel's configuration cache and clear its cached `feature_flags` entry. The Nuxt feature-flags cache refreshes after ten minutes; restart the Nuxt process to refresh it immediately.
+4. In the form editor, open **Security & Access**, enable **Bot Protection**, select **Cloudflare Turnstile**, and save. Existing forms keep their current CAPTCHA provider.
+
+Turnstile verifies completed public submissions, including edits to existing submissions. Field-validation requests do not consume tokens. As with the existing CAPTCHA providers, enabled partial submissions save without a CAPTCHA; disable partial submissions if every saved response must be verified. Account registration continues to use its existing provider.
+
+Tokens expire after five minutes and are single-use. The widget refreshes expired tokens and resets after public submission errors. The existing admin submission-edit modal does not reset CAPTCHA tokens after errors; reopen that modal before retrying. If verification cannot complete, the form rejects the submission.
+
+Cloudflare's [test keys](https://developers.cloudflare.com/turnstile/troubleshooting/testing/) can exercise the widget, but their verification responses omit the action. This integration requires the `form_submit` action, so a successful end-to-end submission needs a dedicated non-production widget and keys with the test hostname allowed. Automated API tests mock verified responses with that action. See [server-side verification](https://developers.cloudflare.com/turnstile/get-started/server-side-validation/) for token behavior.

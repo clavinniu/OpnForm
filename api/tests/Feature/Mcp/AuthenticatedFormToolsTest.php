@@ -448,3 +448,22 @@ it('returns canonical definitions for legacy forms without mutating them', funct
         ->not->toHaveKey('creator_id')
         ->not->toHaveKey('workspace_id');
 });
+
+it('preserves Turnstile when updating a canonical form definition', function () {
+    $user = User::factory()->create();
+    $workspace = managedWorkspace($user);
+    $form = managedForm($user, $workspace, ['use_captcha' => true, 'captcha_provider' => 'turnstile']);
+    $management = app(\App\Service\Forms\McpFormManagementService::class);
+    $revision = $management->serializeForm($management->form($user, $form->id))['revision'];
+    $definition = app(AgentFormDefinition::class)->fromForm($form);
+    $definition['title'] = 'Updated Turnstile form';
+
+    OpnFormServer::actingAs($user, 'oauth')->tool(UpdateFormTool::class, [
+        'form_id' => $form->id,
+        'expected_revision' => $revision,
+        'definition' => $definition,
+    ])->assertOk();
+
+    expect($form->refresh()->captcha_provider)->toBe('turnstile');
+    expect($form->title)->toBe('Updated Turnstile form');
+});

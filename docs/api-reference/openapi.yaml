@@ -1367,7 +1367,7 @@ components:
                     type: boolean
                 captcha_provider:
                     type: string
-                    enum: [recaptcha, hcaptcha]
+                    enum: [recaptcha, hcaptcha, turnstile]
 
                 # SEO and indexing
                 can_be_indexed:
